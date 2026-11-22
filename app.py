@@ -14,6 +14,7 @@ with open("tokens.json") as f:
 API_KEY = data.get("api-key")
 
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 tuya_api = TuyaApi.from_data(data)
 tuya_api.add_device_from_data(TwoSwitches, data, "room-light")
 
