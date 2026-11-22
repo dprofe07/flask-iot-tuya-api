@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 import json
+import os.path
 
 from flask import Flask, abort, jsonify, request
 
 from tuya_lib import TuyaApi, TwoSwitches
 
+is_server = os.path.exists("/SERVER/is_server")
+prefix = "/tuya-iot-api" if is_server else ""
 with open("tokens.json") as f:
     data = json.load(f)
 
@@ -15,7 +18,7 @@ tuya_api = TuyaApi.from_data(data)
 tuya_api.add_device_from_data(TwoSwitches, data, "room-light")
 
 
-@app.post("/<device_name>/<action>")
+@app.post(prefix + "/<device_name>/<action>")
 def light(device_name, action):
     tuya_api.ensure_token()
 
@@ -27,7 +30,7 @@ def light(device_name, action):
     return process_device(dev, action)
 
 
-@app.post("/<device_name>/<int:n>/<action>")
+@app.post(prefix + "/<device_name>/<int:n>/<action>")
 def light_n(device_name, n, action):
     tuya_api.ensure_token()
 
@@ -59,4 +62,5 @@ def process_device(dev, action):
         return jsonify(error=str(e)), 502
     return jsonify(ok=True, state=state)
 
-app.run('0.0.0.0', 8044)
+if __name__ == '__main__':
+    app.run('0.0.0.0', 8044)
