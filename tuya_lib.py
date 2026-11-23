@@ -2,6 +2,7 @@ import abc
 import hashlib
 import hmac
 import json
+import threading
 import time
 
 import requests
@@ -60,7 +61,9 @@ class TuyaApi:
         if raw:
             headers["Content-Type"] = "application/json"
 
+        t0 = time.perf_counter()
         r = self.http.request(method, self.base_url + url, headers=headers, data=raw or None, timeout=8)
+        print(f"tuya {method} {path} -> {((time.perf_counter() - t0) * 1000):.0f} ms")
         return r.json()
 
     def ensure_token(self):
@@ -71,6 +74,17 @@ class TuyaApi:
             raise RuntimeError(f"token error: {r}")
         self._tok["value"] = r["result"]["access_token"]
         self._tok["exp"] = time.time() + r["result"]["expire_time"] - 300
+
+    def start_token_updation_mainloop(self):
+        threading.Thread(target=self.mainloop).start()
+
+    def mainloop(self):
+        while True:
+            try:
+                self.ensure_token()
+            except Exception as e:
+                print(f"token refresh: {e}")
+            time.sleep(60)
 
     def send(self, device_id, commands):
         # commands: [{code: ..., value: ...}]

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import json
 import os.path
+import time
 
 from flask import Flask, abort, jsonify, request
 
@@ -31,8 +32,10 @@ def light(device_name, action):
     return process_device(dev, action)
 
 
-@app.post(prefix + "/<device_name>/<int:n>/<action>")
+@app.get(prefix + "/<device_name>/<int:n>/<action>")
 def light_n(device_name, n, action):
+    t = time.time()
+    print('Got req')
     tuya_api.ensure_token()
 
     if request.headers.get("X-Key") != API_KEY:
@@ -46,7 +49,7 @@ def light_n(device_name, n, action):
         abort(400, "not supported on this device")
     dev = dev.subdevice(n)
 
-    return process_device(dev, action)
+    return [process_device(dev, action), print(f"Done for {time.time() - t} s")][0]
 
 
 def process_device(dev, action):
@@ -62,6 +65,8 @@ def process_device(dev, action):
         app.logger.exception("cmd failed")
         return jsonify(error=str(e)), 502
     return jsonify(ok=True, state=state)
+
+tuya_api.start_token_updation_mainloop()
 
 if __name__ == '__main__':
     app.run('0.0.0.0', 8044)
