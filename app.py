@@ -5,7 +5,7 @@ import time
 
 from flask import Flask, abort, jsonify, request
 
-from tuya_lib import TuyaApi, TwoSwitches
+from tinytuya_lib import TuyaApi, MultipleSwitches
 
 is_server = os.path.exists("/SERVER/is_server")
 prefix = "/tuya-iot-api" if is_server else ""
@@ -17,7 +17,7 @@ API_KEY = data.get("api-key")
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 tuya_api = TuyaApi.from_data(data)
-tuya_api.add_device_from_data(TwoSwitches, data, "room-light")
+tuya_api.add_device_from_data(MultipleSwitches, data, "room-light")
 
 
 @app.post(prefix + "/<device_name>/<action>")

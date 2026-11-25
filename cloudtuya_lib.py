@@ -141,7 +141,7 @@ class SingleSwitch(Device):
         return self.off() if state else self.on()
 
 
-class TwoSwitches(Device):
+class MultipleSwitches(Device):
     def __init__(self, tuya_api: TuyaApi, device_id: str, codes=("switch_1", "switch_2")):
         self.tuya_api = tuya_api
         self.device_id = device_id
