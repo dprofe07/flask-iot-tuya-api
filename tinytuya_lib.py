@@ -37,6 +37,9 @@ class TuyaApi:
     def add_device(self, device: Device, device_name):
         self._devices[device_name] = device
 
+    def ensure_token(self):
+        pass
+
     def add_device_from_data(self, cls, data, device_name):
         dev_data = data["devices"][device_name]
         tt_dev = tt.OutletDevice(
