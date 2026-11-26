@@ -22,8 +22,6 @@ tuya_api.add_device_from_data(MultipleSwitches, data, "room-light")
 
 @app.post(prefix + "/<device_name>/<action>")
 def light(device_name, action):
-    tuya_api.ensure_token()
-
     if request.headers.get("X-Key") != API_KEY:
         abort(403)
 
@@ -32,12 +30,8 @@ def light(device_name, action):
     return process_device(dev, action)
 
 
-@app.get(prefix + "/<device_name>/<int:n>/<action>")
+@app.post(prefix + "/<device_name>/<int:n>/<action>")
 def light_n(device_name, n, action):
-    t = time.time()
-    print('Got req')
-    tuya_api.ensure_token()
-
     if request.headers.get("X-Key") != API_KEY:
         abort(403)
 
@@ -49,7 +43,7 @@ def light_n(device_name, n, action):
         abort(400, "not supported on this device")
     dev = dev.subdevice(n)
 
-    return [process_device(dev, action), print(f"Done for {time.time() - t} s")][0]
+    return process_device(dev, action)
 
 
 def process_device(dev, action):
@@ -66,7 +60,6 @@ def process_device(dev, action):
         return jsonify(error=str(e)), 502
     return jsonify(ok=True, state=state)
 
-tuya_api.start_token_updation_mainloop()
 
 if __name__ == '__main__':
     app.run('0.0.0.0', 8044)
