@@ -8,6 +8,8 @@ import tinytuya as tt
 
 
 class Device(abc.ABC):
+    _tt_device: tt.OutletDevice
+
     def action(self, act):
         if not self.has_action(act):
             raise ValueError("invalid action")
@@ -22,6 +24,10 @@ class Device(abc.ABC):
 
     def _send(self, data):
         self._tt_device.send(self._tt_device.generate_payload(tt.CT.CONTROL, data))
+
+    def get_state(self):
+        self._tt_device.add_dps_to_request([1, 2])
+        return self._tt_device.status()
 
 
 class TuyaApi:
@@ -78,7 +84,7 @@ class SingleSwitch(Device):
         return False
 
     def toggle(self):
-        state = self._tt_device.status().get('dps')
+        state = self.get_state()
         if state is None:
             return None
         state = state.get(self.s_code)
@@ -107,16 +113,17 @@ class MultipleSwitches(Device):
         return False
 
     def normal_toggle(self):
-        state = self._tt_device.status().get('dps')
+        state = self.get_state()
         if state is None:
             return None
+        print(state)
         res = [state[self.s_codes[i]] for i in range(len(self.codes))]
         if any(res):
             return self.off()
         return self.on()
 
     def toggle(self):
-        state = self._tt_device.status().get('dps')
+        state = self.get_state()
         if state is None:
             return None
         res = [state[self.s_codes[i]] for i in range(len(self.codes))]
@@ -129,3 +136,17 @@ class MultipleSwitches(Device):
 
     def subdevice(self, device: int):
         return self.singles[device - 1]
+
+    def get_state(self, retries=10):
+        st = None
+        for i in range(retries + 1):
+            st = super().get_state().get('dps')
+            if all(it in st for it in self.s_codes):
+                break
+        else:
+            print("retries exceeded")
+            for k in self.s_codes:
+                st[k] = st.get(k, None)
+        return st
+
+
